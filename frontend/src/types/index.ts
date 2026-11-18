@@ -9,6 +9,7 @@ export interface Contrato {
   objeto_del_contrato?: string;
   valor_del_contrato: number;
   fecha_de_firma?: string;
+  anio_firma?: number;
   proveedor_adjudicado?: string;
   documento_proveedor?: string;
   urlproceso?: string | { url?: string };
@@ -20,6 +21,8 @@ export interface ListaContratosResponse {
   entidad: string;
   nit: string;
   total_resultados: number;
+  limite: number;
+  offset: number;
   contratos: Contrato[];
 }
 
@@ -27,6 +30,8 @@ export interface AlertaDirectaResponse {
   criterio: string;
   monto_minimo_alerta: number;
   hallazgos: number;
+  limite: number;
+  offset: number;
   contratos: Contrato[];
 }
 
@@ -59,5 +64,7 @@ export interface FiltrosContratos {
   palabra_clave?: string;
   monto_minimo?: number;
   solo_directa?: boolean;
+  anio?: number;
   limite?: number;
+  offset?: number;
 }

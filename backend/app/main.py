@@ -1,12 +1,16 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.session import engine, Base, check_db_connection, SessionLocal
-from app.db.models import EntidadModel
+from app.db.models import EntidadModel, ContratoModel
 from app.repositories.commune_repo import CommuneRepository
 from app.services.socrata_service import SocrataService
+from app.services.etl_service import SecopETLService
 from app.api.v1.api import api_router
+
+logger = logging.getLogger("uvicorn.error")
 
 
 @asynccontextmanager
@@ -14,12 +18,11 @@ async def lifespan(app: FastAPI):
     # Inicializar tablas de base de datos
     Base.metadata.create_all(bind=engine)
     
-    # Precargar entidades de Cali y comunas si no existen
+    # Precargar catálogo de comunas y entidades de Cali si no existen
     db = SessionLocal()
     try:
         CommuneRepository.seed_comunas_si_no_existen(db)
         
-        # Precargar entidades principales de Cali
         nombres_entidades = {
             "890399011": "ALCALDÍA DE SANTIAGO DE CALI",
             "890399003": "EMPRESAS MUNICIPALES DE CALI - EMCALI E.I.C.E. E.S.P.",
@@ -35,8 +38,16 @@ async def lifespan(app: FastAPI):
                     tipo="Distrital"
                 ))
         db.commit()
+
+        # Si la base de datos de contratos está vacía, poblar con contratos reales de SECOP II
+        total_contratos = db.query(ContratoModel).count()
+        if total_contratos == 0:
+            logger.info("Base de datos sin contratos. Ejecutando sincronización inicial de SECOP II...")
+            etl = SecopETLService()
+            etl.sincronizar_todas_las_entidades(db, limite_por_entidad=100)
+            logger.info(f"Sincronización inicial completada. Total contratos en BD: {db.query(ContratoModel).count()}")
     except Exception as e:
-        print(f"[Startup Warning] No se pudo completar el seed inicial: {e}")
+        logger.warning(f"[Startup Warning] Error en inicialización de datos: {e}")
     finally:
         db.close()
 

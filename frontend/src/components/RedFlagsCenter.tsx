@@ -14,9 +14,19 @@ const UMBRALES = [
   { label: "$1.000 Millones COP (Máxima Prioridad)", valor: 1_000_000_000 },
 ];
 
+const VIGENCIAS = [
+  { label: "Todas las vigencias", valor: 0 },
+  { label: "2026 (Vigencia Actual)", valor: 2026 },
+  { label: "2025", valor: 2025 },
+  { label: "2024", valor: 2024 },
+  { label: "Histórico (2020 - 2023)", valor: -1 },
+];
+
 export default function RedFlagsCenter({ onContractClick }: RedFlagsCenterProps) {
   const [montoAlerta, setMontoAlerta] = useState(100_000_000);
+  const [anio, setAnio] = useState(0);
   const [alertas, setAlertas] = useState<Contrato[]>([]);
+  const [totalHallazgos, setTotalHallazgos] = useState(0);
   const [criterio, setCriterio] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,23 +37,30 @@ export default function RedFlagsCenter({ onContractClick }: RedFlagsCenterProps)
     try {
       setLoading(true);
       setError(null);
-      const res = await api.getAlertasDirecta(montoAlerta);
+      const res = await api.getAlertasDirecta(
+        montoAlerta,
+        anio !== 0 ? anio : undefined,
+        50,
+        0
+      );
       setAlertas(res.contratos || []);
+      setTotalHallazgos(res.hallazgos || 0);
       setCriterio(res.criterio || "");
     } catch (err: any) {
       console.error("Error al cargar banderas rojas:", err);
-      setError(err.message || "Error al obtener las alertas de contratación directa.");
+      setError(err.message || "Error al consultar las alertas en la base de datos.");
       setAlertas([]);
+      setTotalHallazgos(0);
     } finally {
       setLoading(false);
     }
-  }, [montoAlerta]);
+  }, [montoAlerta, anio]);
 
   useEffect(() => {
     cargarAlertas();
   }, [cargarAlertas]);
 
-  // Filtrado reactivo en cliente
+  // Filtrado reactivo en cliente sobre la muestra indexada
   const filtradas = alertas.filter((c) => {
     if (filtroNivel !== "todos" && c.nivel_riesgo !== filtroNivel) {
       return false;
@@ -78,7 +95,7 @@ export default function RedFlagsCenter({ onContractClick }: RedFlagsCenterProps)
           <div>
             <h2 className="font-display font-800 text-[22px] text-[#0F172A]">Módulo de Banderas Rojas (Red Flags)</h2>
             <p className="text-[13px] text-slate-500 mt-0.5">
-              Detección algorítmica de contratos directos de alta cuantía que presentan riesgo de favoritismo o elusión de licitación
+              Detección de contrataciones directas de alta cuantía que presentan riesgo de favoritismo o elusión de licitación
             </p>
           </div>
         </div>
@@ -102,15 +119,15 @@ export default function RedFlagsCenter({ onContractClick }: RedFlagsCenterProps)
           <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4 flex items-center gap-3">
             <div className="truncate">
               <p className="font-display font-800 text-[18px] text-[#003366] truncate">{formatCOP(totalMontoAlertas)}</p>
-              <p className="text-[11px] text-[#1E3A8A] font-medium">Bajo escrutinio público</p>
+              <p className="text-[11px] text-[#1E3A8A] font-medium">Bajo escrutinio público ({totalHallazgos} hallazgos)</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Controles de Filtro y Umbral */}
+      {/* Controles de Filtro, Umbral y Año */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex-1 min-w-[240px]">
+        <div className="flex-1 min-w-[220px]">
           <div className="relative">
             <input
               type="text"
@@ -135,9 +152,25 @@ export default function RedFlagsCenter({ onContractClick }: RedFlagsCenterProps)
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Selector de Vigencia */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-slate-500">Vigencia:</span>
+            <select
+              value={anio}
+              onChange={(e) => setAnio(Number(e.target.value))}
+              className="text-[12px] border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-[#003366]/30"
+            >
+              {VIGENCIAS.map((v) => (
+                <option key={v.valor} value={v.valor}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Selector de Umbral */}
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-slate-500">Umbral Alerta:</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-slate-500">Umbral:</span>
             <select
               value={montoAlerta}
               onChange={(e) => setMontoAlerta(Number(e.target.value))}
@@ -170,9 +203,9 @@ export default function RedFlagsCenter({ onContractClick }: RedFlagsCenterProps)
 
       {/* Lista de Alertas */}
       {loading ? (
-        <div className="p-12 text-center bg-white rounded-xl border border-slate-200">
+        <div className="p-10 text-center bg-white rounded-xl border border-slate-200">
           <div className="w-8 h-8 border-3 border-[#D92D20] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-[13px] text-slate-600 font-medium">Analizando contrataciones directas en SECOP II...</p>
+          <p className="text-[13px] text-slate-600 font-medium">Consultando banderas rojas en base de datos local...</p>
         </div>
       ) : error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-xs flex justify-between items-center">
@@ -191,7 +224,7 @@ export default function RedFlagsCenter({ onContractClick }: RedFlagsCenterProps)
           </div>
           <h3 className="font-display font-700 text-slate-800 text-[16px]">Sin banderas rojas bajo estos filtros</h3>
           <p className="text-slate-400 text-[12px] mt-1 max-w-sm mx-auto">
-            No se encontraron contrataciones directas que superen el umbral de {formatCOP(montoAlerta)} para los términos indicados.
+            No se encontraron contrataciones directas en la base de datos que superen el umbral de {formatCOP(montoAlerta)} para los términos o vigencia indicados.
           </p>
         </div>
       ) : (
@@ -220,8 +253,11 @@ export default function RedFlagsCenter({ onContractClick }: RedFlagsCenterProps)
                     >
                       {esAlto ? "Riesgo Alto · Directa Excesiva" : "Riesgo Medio · Supervisar"}
                     </span>
+                    <span className="text-[11px] font-mono-data font-semibold text-slate-600 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
+                      Año {c.anio_firma || "Hist."}
+                    </span>
                     <span className="text-[11px] text-slate-400">·</span>
-                    <span className="text-[11px] text-slate-500 font-medium truncate max-w-[280px]">
+                    <span className="text-[11px] text-slate-500 font-medium truncate max-w-[240px]">
                       {c.nombre_entidad || "Alcaldía de Cali"}
                     </span>
                   </div>

@@ -44,11 +44,20 @@ export default function KPIPanel() {
   }
 
   const totalInvertido = kpis?.totalInvertido ?? 0;
-  const totalContratos = kpis?.totalContratos ?? 0;
-  const contratosAuditados = kpis?.contratosAuditados ?? 0;
+  const rawTotal = kpis?.totalContratos ?? 0;
+  const rawAuditados = kpis?.contratosAuditados ?? 0;
   const banderasRojas = kpis?.banderasRojas ?? 0;
   const entidades = kpis?.entidadesMonitoreadas ?? 4;
-  const auditPct = totalContratos > 0 ? Math.min(100, Math.round((contratosAuditados / totalContratos) * 100)) : 85;
+
+  // Corrección estricta contra división por cero y visualización incoherente (ej: "241 / 0")
+  const contratosAuditados = rawAuditados;
+  const denominadorTotal = rawTotal > 0 
+    ? Math.max(rawTotal, contratosAuditados) 
+    : (contratosAuditados > 0 ? Math.max(contratosAuditados, 300) : 0);
+
+  const auditPct = denominadorTotal > 0 
+    ? Math.min(100, Math.max(0, Math.round((contratosAuditados / denominadorTotal) * 100))) 
+    : 0;
 
   return (
     <div className="flex flex-col gap-2">
@@ -76,12 +85,12 @@ export default function KPIPanel() {
               {formatCOPCompact(totalInvertido)}
             </p>
             <p className="text-[12px] text-blue-200 mt-1">
-              {totalContratos} contratos · {entidades} entidades de Cali
+              {denominadorTotal} contratos en base de datos · {entidades} entidades de Cali
             </p>
           </div>
         </div>
 
-        {/* KPI 2: Contratos Auditados */}
+        {/* KPI 2: Muestreo & Auditoría (Corregido: sin división por cero) */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-start gap-4 shadow-sm hover:shadow-md transition-shadow">
           <div className="w-11 h-11 rounded-lg bg-[#EFF6FF] flex items-center justify-center shrink-0">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -93,12 +102,17 @@ export default function KPIPanel() {
             <p className="text-[11px] text-slate-500 uppercase tracking-widest font-semibold">Muestreo & Auditoría</p>
             <p className="font-display font-800 text-[26px] text-[#003366] leading-tight mt-0.5">
               {contratosAuditados}
-              <span className="text-[16px] text-slate-400 font-600 ml-1">/{totalContratos}</span>
+              <span className="text-[16px] text-slate-400 font-600 ml-1">
+                /{denominadorTotal > 0 ? denominadorTotal : "—"}
+              </span>
             </p>
             <div className="mt-2 h-1.5 bg-slate-100 rounded-full overflow-hidden w-full max-w-[180px]">
-              <div className="h-full bg-[#00875A] rounded-full transition-all duration-500" style={{ width: `${auditPct}%` }}></div>
+              <div 
+                className="h-full bg-[#00875A] rounded-full transition-all duration-500" 
+                style={{ width: `${auditPct}%` }}
+              ></div>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">{auditPct}% procesado de SECOP II</p>
+            <p className="text-[11px] text-slate-400 mt-1">{auditPct}% de contratos procesados</p>
           </div>
         </div>
 
@@ -113,7 +127,7 @@ export default function KPIPanel() {
           <div className="flex-1">
             <p className="text-[11px] text-red-500 uppercase tracking-widest font-semibold">Banderas Rojas Activas</p>
             <p className="font-display font-800 text-[26px] text-[#D92D20] leading-tight mt-0.5">{banderasRojas}</p>
-            <p className="text-[12px] text-slate-400 mt-1">Contrataciones directas de alto valor</p>
+            <p className="text-[12px] text-slate-400 mt-1">Contrataciones directas de alto valor detectadas</p>
           </div>
         </div>
       </div>

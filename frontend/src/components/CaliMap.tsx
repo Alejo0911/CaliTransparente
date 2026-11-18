@@ -39,11 +39,10 @@ export default function CaliMap({
       attributionControl: true,
     });
 
-    // Capa base de OpenStreetMap / CartoDB Positron para estilo limpio y profesional
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+    // Capa base estándar de OpenStreetMap (100% gratuita, sin API Key)
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-      subdomains: "abcd",
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19,
     }).addTo(map);
 
@@ -76,15 +75,15 @@ export default function CaliMap({
         c.riskLevel === "alto"
           ? "#D92D20"
           : c.riskLevel === "medio"
-          ? "#F59E0B"
-          : "#00875A";
+            ? "#F59E0B"
+            : "#00875A";
 
       const fillColor =
         c.riskLevel === "alto"
           ? "#FEE2E2"
           : c.riskLevel === "medio"
-          ? "#FEF3C7"
-          : "#D1FAE5";
+            ? "#FEF3C7"
+            : "#D1FAE5";
 
       // Círculo interactivo que representa la zona geográfica de la comuna
       const circle = L.circleMarker([c.lat, c.lng], {

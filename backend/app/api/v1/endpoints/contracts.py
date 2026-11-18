@@ -3,14 +3,14 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.schemas.contract_schema import ListaContratosResponse
-from app.services.socrata_service import SocrataService
+from app.repositories.contract_repo import ContractRepository
 from app.db.session import get_db
 
 router = APIRouter(prefix="/contratos", tags=["Contratos"])
 
 
 @router.get("", response_model=ListaContratosResponse)
-async def listar_contratos(
+def listar_contratos(
     entidad: str = Query(
         "alcaldia",
         description=f"Entidad a consultar: {', '.join(settings.ENTIDADES_CALI.keys())}",
@@ -19,7 +19,7 @@ async def listar_contratos(
         None,
         description="Buscar en el objeto del contrato (ej. 'infraestructura', 'salud')",
     ),
-    monto_minimo: Optional[int] = Query(
+    monto_minimo: Optional[float] = Query(
         None,
         ge=0,
         description="Filtrar contratos mayores o iguales a este valor en COP",
@@ -28,12 +28,17 @@ async def listar_contratos(
         False,
         description="Filtrar únicamente modalidad de contratación directa",
     ),
-    limite: int = Query(50, ge=1, le=200, description="Cantidad máxima de contratos a retornar"),
+    anio: Optional[int] = Query(
+        None,
+        description="Filtrar por año de firma / vigencia (ej: 2026, 2025, 2024, -1 para histórico)",
+    ),
+    limite: int = Query(20, ge=1, le=100, description="Paginación obligatoria: cantidad de contratos por página"),
+    offset: int = Query(0, ge=0, description="Paginación obligatoria: índice de desplazamiento"),
     db: Session = Depends(get_db),
 ):
     """
-    Obtiene contratos públicos de Santiago de Cali desde SECOP II en tiempo real,
-    aplicando filtros de veeduría ciudadana.
+    Obtiene contratos públicos de Santiago de Cali consultando EXCLUSIVAMENTE la base de datos
+    local indexada en PostgreSQL/SQLite, con paginación obligatoria y sin llamadas bloqueantes a APIs externas.
     """
     nit = settings.ENTIDADES_CALI.get(entidad.lower())
     if not nit:
@@ -42,18 +47,22 @@ async def listar_contratos(
             detail=f"Entidad no válida. Opciones permitidas: {list(settings.ENTIDADES_CALI.keys())}",
         )
 
-    datos = await SocrataService.obtener_contratos_cali(
-        nit=nit,
+    datos, total_count = ContractRepository.listar_contratos_paginados(
+        db=db,
+        nit_entidad=nit,
         palabra_clave=palabra_clave,
         monto_minimo=monto_minimo,
         solo_directa=solo_directa,
+        anio=anio,
         limite=limite,
+        offset=offset,
     )
 
     return ListaContratosResponse(
         entidad=entidad.upper(),
         nit=nit,
-        total_resultados=len(datos),
+        total_resultados=total_count,
+        limite=limite,
+        offset=offset,
         contratos=datos,
     )
-

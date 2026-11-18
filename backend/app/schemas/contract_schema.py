@@ -1,5 +1,5 @@
 from typing import Any, Optional, List, Union
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 
 
 class ContratoResponse(BaseModel):
@@ -11,6 +11,7 @@ class ContratoResponse(BaseModel):
     objeto_del_contrato: Optional[str] = None
     valor_del_contrato: float = 0.0
     fecha_de_firma: Optional[str] = None
+    anio_firma: Optional[int] = None
     proveedor_adjudicado: Optional[str] = None
     documento_proveedor: Optional[str] = None
     urlproceso: Optional[Any] = None
@@ -32,6 +33,8 @@ class ListaContratosResponse(BaseModel):
     entidad: str
     nit: str
     total_resultados: int
+    limite: int = 20
+    offset: int = 0
     contratos: List[ContratoResponse]
 
 
@@ -39,6 +42,8 @@ class AlertaDirectaResponse(BaseModel):
     criterio: str
     monto_minimo_alerta: float
     hallazgos: int
+    limite: int = 20
+    offset: int = 0
     contratos: List[ContratoResponse]
 
 
