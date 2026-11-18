@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+html,
+body,
+#root {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background: #F8FAFC;
+  color: #0F172A;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
+}
+*::-webkit-scrollbar { width: 5px; height: 5px; }
+*::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+@theme inline {
+  --color-cali-navy: #003366;
+  --color-cali-green: #00875A;
+  --color-cali-red: #D92D20;
+  --color-cali-amber: #F59E0B;
+  --color-cali-slate: #F8FAFC;
+  --color-cali-ink: #0F172A;
+}
+
+.font-display { font-family: 'Plus Jakarta Sans', sans-serif; }
+.font-mono-data { font-family: 'JetBrains Mono', monospace; }
+
+.badge-red { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+.badge-amber { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+.badge-green { background: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+.badge-blue { background: #DBEAFE; color: #1E3A8A; border: 1px solid #BFDBFE; }
+
+.btn-primary {
+  background: #003366;
+  color: white;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #002244; }
+
+.commune-path {
+  transition: fill 0.2s, stroke-width 0.2s;
+  cursor: pointer;
+}
+.commune-path:hover { stroke-width: 2.5; filter: brightness(1.08); }
+
+.tab-active {
+  color: #003366;
+  border-bottom: 2px solid #003366;
+}
+
+.risk-bar {
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}

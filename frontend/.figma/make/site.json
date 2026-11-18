@@ -1,0 +1,10 @@
+{
+  "description": "Empowering citizens in Santiago de Cali with a transparent platform for public contracting analysis, featuring interactive maps and real-time data insights.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
